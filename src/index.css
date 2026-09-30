@@ -1,0 +1,48 @@
+@import 'tailwindcss';
+
+/*
+  Mati Ride design tokens.
+  Palette is a calm civic teal (brand) with amber for fares/discounts and
+  rose/red reserved for SOS and destructive actions.
+*/
+@theme {
+  --color-brand-50: #ecfeff;
+  --color-brand-100: #cffafe;
+  --color-brand-200: #a5f3fc;
+  --color-brand-500: #06b6d4;
+  --color-brand-600: #0891b2;
+  --color-brand-700: #0e7490;
+  --color-brand-800: #155e75;
+  --color-brand-900: #164e63;
+
+  --color-fare-100: #fef3c7;
+  --color-fare-700: #b45309;
+
+  --color-sos-500: #e11d48;
+  --color-sos-600: #be123c;
+
+  --font-sans: system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-slate-100 text-slate-900 antialiased;
+}
+
+/* Keep tap targets comfortable for drivers using the app one-handed. */
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+:focus-visible {
+  @apply outline-2 outline-offset-2 outline-brand-700;
+}

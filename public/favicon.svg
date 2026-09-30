@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Mati Ride">
+  <rect width="64" height="64" rx="14" fill="#0e7490" />
+  <path d="M18 40h28a2 2 0 0 0 2-2v-9l-6-9a2 2 0 0 0-1.7-1H24a2 2 0 0 0-2 2v3h-4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z" fill="none" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" />
+  <circle cx="22" cy="45" r="4.5" fill="none" stroke="#ffffff" stroke-width="3" />
+  <circle cx="42" cy="45" r="4.5" fill="none" stroke="#ffffff" stroke-width="3" />
+  <path d="M28 22h6" stroke="#ffffff" stroke-width="3" stroke-linecap="round" />
+</svg>
