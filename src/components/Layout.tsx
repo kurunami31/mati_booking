@@ -62,7 +62,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
           <div className="flex items-center gap-2">
             <img src="/favicon.svg" alt="" className="size-8 rounded-lg" />
             <div className="leading-tight">
-              <p className="text-sm font-bold text-slate-900">Mati Ride</p>
+              <p className="text-sm font-bold text-slate-900">SakayTa</p>
               <p className="text-xs text-slate-500">
                 {role ? ROLE_LABELS[role] : 'Not signed in'}
                 {profile?.full_name ? ` · ${profile.full_name}` : ''}

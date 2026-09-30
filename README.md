@@ -1,4 +1,4 @@
-# Mati Ride
+# SakayTa
 
 Booking app for tricycles and tuk-tuk/bao-bao in Mati City, Davao Oriental.
 Passengers see a fixed fare before booking, get an assigned driver, and can raise an SOS

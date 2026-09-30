@@ -1,4 +1,4 @@
--- Mati Ride — initial schema
+-- SakayTa — initial schema
 -- Tricycle / tuk-tuk / bao-bao booking for Mati City, Davao Oriental.
 --
 -- Design notes:

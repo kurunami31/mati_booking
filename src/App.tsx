@@ -18,7 +18,7 @@ import { isSupabaseConfigured } from './lib/supabase'
 function SetupScreen() {
   return (
     <div className="mx-auto flex min-h-full max-w-lg flex-col justify-center gap-4 px-4 py-10">
-      <h1 className="text-2xl font-bold text-slate-900">Mati Ride is not configured yet</h1>
+      <h1 className="text-2xl font-bold text-slate-900">SakayTa is not configured yet</h1>
       <p className="text-sm text-slate-600">
         Add your Supabase project values to <code className="rounded bg-slate-200 px-1">.env.local</code>,
         then restart the dev server.

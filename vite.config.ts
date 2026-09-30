@@ -11,26 +11,36 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg'],
+      includeAssets: ['favicon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Mati Ride — Tricycle & Tuk-tuk Booking',
-        short_name: 'Mati Ride',
+        name: 'SakayTa — Tricycle & Tuk-tuk Booking',
+        short_name: 'SakayTa',
         description:
-          'Book a tricycle or tuk-tuk/bao-bao in Mati City with a fixed fare shown before booking.',
+          'SakayTa — book a tricycle or tuk-tuk/bao-bao in Mati City with a fixed fare shown before booking.',
         theme_color: '#0e7490',
         background_color: '#f1f5f9',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
         scope: '/',
-        // TODO(icons): add 192x192 and 512x512 PNG icons before PWA install testing
-        // on older Android devices. SVG is accepted by modern browsers only.
         icons: [
           {
-            src: 'favicon.svg',
-            sizes: 'any',
-            type: 'image/svg+xml',
+            src: 'icon-192.png',
+            sizes: '192x192',
+            type: 'image/png',
             purpose: 'any',
+          },
+          {
+            src: 'icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: 'icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
           },
         ],
       },

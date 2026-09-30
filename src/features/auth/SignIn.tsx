@@ -50,9 +50,8 @@ export function SignIn() {
   return (
     <div className="mx-auto flex min-h-full max-w-md flex-col justify-center px-4 py-10">
       <div className="mb-6 text-center">
-        <img src="/favicon.svg" alt="" className="mx-auto size-12 rounded-xl" />
-        <h1 className="mt-3 text-2xl font-bold text-slate-900">Mati Ride</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <img src="/logo-with-title.png" alt="SakayTa" className="mx-auto h-24 w-auto" />
+        <p className="mt-3 text-sm text-slate-500">
           Book a tricycle or tuk-tuk/bao-bao in Mati City. Fixed fare before you ride.
         </p>
         <p className="mt-1 text-xs text-slate-400">

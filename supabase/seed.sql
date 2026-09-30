@@ -1,4 +1,4 @@
--- Mati Ride — seed reference data
+-- SakayTa — seed reference data
 -- Safe to re-run (upserts / ON CONFLICT DO NOTHING).
 --
 -- WARNING — PLACEHOLDER DATA
@@ -14,7 +14,7 @@
 
 insert into public.app_settings (key, value, description) values
   ('city_name', '"Mati City"'::jsonb, 'City shown in the app header'),
-  ('platform_name', '"Mati Ride"'::jsonb, 'Product name'),
+  ('platform_name', '"SakayTa"'::jsonb, 'Product name'),
   ('currency', '"PHP"'::jsonb, 'Currency code'),
   ('base_fare', '15'::jsonb, 'Fallback base fare when no matrix row exists [VERIFY]'),
   ('per_km_rate', '10'::jsonb, 'Fallback per-km rate [VERIFY]'),
