@@ -28,7 +28,17 @@ emergency dispatch is wired up.
 2. Create a Supabase project, then run the SQL in the Supabase SQL editor (in order):
 
    - `supabase/migrations/0001_init.sql` — tables, RLS, and RPCs
+   - `supabase/migrations/0002_integrity.sql` — request/presence expiry, rating
+     aggregation, reliability counters
    - `supabase/seed.sql` — Mati zones, placeholder fare matrix, app settings
+
+   Or apply everything from the command line (needs the pooler connection
+   string; see `scripts/migrate.mjs`):
+
+   ```
+   $env:SUPABASE_DB_URL="postgresql://postgres.<ref>:<password>@<pooler>:5432/postgres"
+   node scripts/migrate.mjs --seed
+   ```
 
 3. Copy `.env.local.example` to `.env.local` and paste your project values
    (Dashboard → Project Settings → API):
@@ -77,6 +87,9 @@ emergency dispatch is wired up.
 - **Offline**: bookings, status changes, and SOS attempts are queued in `localStorage`
   (`src/lib/offline.ts`) and flushed when the connection returns (`useOfflineSync`).
 - **SOS** writes to `sos_alerts`; the admin SOS panel acknowledges and closes alerts.
+- **Expiry and integrity** (`0002_integrity.sql`): unaccepted requests expire, stale
+  driver presence is cleared, ratings aggregate into `drivers.rating`, and reliability
+  counters are driven by `trip_events`. Scheduled with `pg_cron` where available.
 
 ## Dark corners in this MVP
 

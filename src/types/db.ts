@@ -26,6 +26,7 @@ export type BookingStatus =
   | 'completed'
   | 'cancelled'
   | 'no_show'
+  | 'expired'
 export type PaymentMethod = 'cash' | 'ewallet'
 export type PaymentStatus = 'pending' | 'collected' | 'settled'
 export type SosStatus = 'open' | 'acknowledged' | 'closed_false_alarm' | 'closed_resolved'

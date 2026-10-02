@@ -34,6 +34,7 @@ export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
   completed: 'Completed',
   cancelled: 'Cancelled',
   no_show: 'No show',
+  expired: 'Expired — no driver accepted',
 }
 
 export const BOOKING_STATUS_TONE: Record<BookingStatus, 'info' | 'good' | 'warn' | 'bad' | 'muted'> = {
@@ -44,6 +45,7 @@ export const BOOKING_STATUS_TONE: Record<BookingStatus, 'info' | 'good' | 'warn'
   completed: 'good',
   cancelled: 'muted',
   no_show: 'bad',
+  expired: 'warn',
 }
 
 export const DISCOUNT_OPTIONS: { value: DiscountType; label: string }[] = [

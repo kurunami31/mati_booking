@@ -158,7 +158,11 @@ export function PassengerTrip() {
   }
 
   const { booking: b, driver, driverProfile, vehicle } = details
-  const isFinished = b.status === 'completed' || b.status === 'cancelled' || b.status === 'no_show'
+  const isFinished =
+    b.status === 'completed' ||
+    b.status === 'cancelled' ||
+    b.status === 'no_show' ||
+    b.status === 'expired'
   const canSos = ['assigned', 'arrived', 'in_progress'].includes(b.status)
 
   return (
@@ -288,10 +292,14 @@ export function PassengerTrip() {
         </Card>
       )}
 
-      {(b.status === 'cancelled' || b.status === 'no_show') && (
+      {(b.status === 'cancelled' || b.status === 'no_show' || b.status === 'expired') && (
         <div className="space-y-2">
           <Alert tone="muted">
-            {b.cancel_reason ? `Reason: ${b.cancel_reason}` : 'This trip was closed.'}
+            {b.status === 'expired'
+              ? 'No driver accepted this request in time. Try booking again.'
+              : b.cancel_reason
+                ? `Reason: ${b.cancel_reason}`
+                : 'This trip was closed.'}
           </Alert>
           <Button block onClick={() => navigate('/')}>
             Book another ride
