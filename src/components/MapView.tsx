@@ -22,6 +22,7 @@ const MARKER_COLOR: Record<NonNullable<MapMarker['kind']>, string> = {
 
 interface MapViewProps {
   markers: MapMarker[]
+  polyline?: { lat: number; lng: number }[]
   center?: { lat: number; lng: number }
   zoom?: number
   className?: string
@@ -31,6 +32,7 @@ interface MapViewProps {
 
 export function MapView({
   markers,
+  polyline,
   center,
   zoom = 14,
   className,
@@ -72,6 +74,13 @@ export function MapView({
     const layer = layerRef.current
     layer.clearLayers()
 
+    if (polyline && polyline.length > 1) {
+      L.polyline(
+        polyline.map((p) => [p.lat, p.lng] as [number, number]),
+        { color: '#0e7490', weight: 5 },
+      ).addTo(layer)
+    }
+
     for (const marker of markers) {
       const circle = L.circleMarker([marker.lat, marker.lng], {
         radius: marker.kind === 'sos' ? 12 : 9,
@@ -90,7 +99,7 @@ export function MapView({
     } else if (markers.length === 1) {
       mapRef.current.setView([markers[0].lat, markers[0].lng], zoom)
     }
-  }, [markers, zoom, lowData])
+  }, [markers, polyline, zoom, lowData])
 
   if (lowData) {
     return (

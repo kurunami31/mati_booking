@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../stores/auth'
 import { useActiveBooking } from '../../hooks/useActiveBooking'
 import { useBookingDetails } from '../../hooks/useBookingDetails'
 import { useTableSubscription } from '../../hooks/useRealtime'
 import { supabase } from '../../lib/supabase'
-import { getCurrentPosition } from '../../lib/geo'
+import { getCurrentPosition, haversineKm } from '../../lib/geo'
 import { enqueue, isOnline } from '../../lib/offline'
 import { VEHICLE_LABELS, BOOKING_STATUS_LABELS, BOOKING_STATUS_TONE } from '../../lib/constants'
 import { formatPeso, formatDistanceKm, shortId } from '../../lib/format'
@@ -32,14 +32,16 @@ export function PassengerTrip() {
   }, [booking])
 
   const targetId = booking?.id ?? lastBookingId
-  const { details, loading: detailsLoading } = useBookingDetails(targetId)
+  const { details, loading: detailsLoading, reload: reloadDetails } = useBookingDetails(targetId)
 
   // Keep the driver's position fresh while they are on the way.
   useTableSubscription({
     table: 'drivers',
     enabled: Boolean(details?.driver?.id),
     filter: details?.driver?.id ? `id=eq.${details.driver.id}` : undefined,
-    onChange: () => {},
+    onChange: () => {
+      void reloadDetails()
+    },
   })
 
   const runTransition = useCallback(
@@ -138,6 +140,106 @@ export function PassengerTrip() {
     return list
   }, [details])
 
+  // --- Live tracking: route polyline, ETA, auto-arrival, photos ---------------
+
+  const driverPos =
+    details?.driver?.last_lat != null && details?.driver?.last_lng != null
+      ? { lat: details.driver.last_lat, lng: details.driver.last_lng }
+      : null
+
+  const target = useMemo(() => {
+    if (!details) return null
+    const b = details.booking
+    if (
+      (b.status === 'assigned' || b.status === 'arrived') &&
+      b.origin_lat != null &&
+      b.origin_lng != null
+    ) {
+      return { lat: b.origin_lat, lng: b.origin_lng }
+    }
+    if (b.status === 'in_progress' && b.dest_lat != null && b.dest_lng != null) {
+      return { lat: b.dest_lat, lng: b.dest_lng }
+    }
+    return null
+  }, [details])
+
+  const [route, setRoute] = useState<{ points: { lat: number; lng: number }[]; etaMin: number | null }>({
+    points: [],
+    etaMin: null,
+  })
+  const lastRouteRef = useRef<{ at: number; lat: number; lng: number } | null>(null)
+
+  useEffect(() => {
+    if (!driverPos || !target) return
+    const now = Date.now()
+    const last = lastRouteRef.current
+    const moved = last
+      ? haversineKm(driverPos, { lat: last.lat, lng: last.lng })
+      : Infinity
+    if (last && now - last.at < 20000 && moved < 0.05) return
+    lastRouteRef.current = { at: now, lat: driverPos.lat, lng: driverPos.lng }
+
+    let cancelled = false
+    void (async () => {
+      try {
+        const { data } = await supabase.functions.invoke('route', {
+          body: { from: [driverPos.lng, driverPos.lat], to: [target.lng, target.lat] },
+        })
+        if (!cancelled && data) {
+          const geom = (data.geometry ?? []) as number[][]
+          setRoute({
+            points: geom.map((c) => ({ lat: c[1], lng: c[0] })),
+            etaMin: Math.ceil((data.duration_s ?? 0) / 60),
+          })
+        }
+      } catch {
+        // straight-line fallback below
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [driverPos?.lat, driverPos?.lng, target?.lat, target?.lng]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const etaMin =
+    route.etaMin ??
+    (driverPos && target
+      ? Math.max(1, Math.round((haversineKm(driverPos, target) / 18) * 60))
+      : null)
+
+  const [arriving, setArriving] = useState(false)
+  useEffect(() => {
+    if (!details || details.booking.status !== 'in_progress' || arriving) return
+    if (driverPos && target && haversineKm(driverPos, target) <= 0.15) {
+      setArriving(true)
+    }
+  }, [driverPos, target, details, arriving])
+
+  const [driverPhoto, setDriverPhoto] = useState<string | null>(null)
+  const [vehiclePhoto, setVehiclePhoto] = useState<string | null>(null)
+  useEffect(() => {
+    let active = true
+    const sign = async (p: string | null | undefined) => {
+      if (!p) return null
+      if (p.startsWith('http')) return p
+      const { data } = await supabase.storage.from('driver-photos').createSignedUrl(p, 3600)
+      return data?.signedUrl ?? null
+    }
+    void (async () => {
+      const [d, v] = await Promise.all([
+        sign(details?.driver?.photo_url),
+        sign(details?.vehicle?.photo_url),
+      ])
+      if (active) {
+        setDriverPhoto(d)
+        setVehiclePhoto(v)
+      }
+    })()
+    return () => {
+      active = false
+    }
+  }, [details?.driver?.photo_url, details?.vehicle?.photo_url])
+
   if (loading || detailsLoading) {
     return (
       <div className="flex justify-center py-16">
@@ -175,7 +277,26 @@ export function PassengerTrip() {
 
       {actionError && <Alert tone="warn">{actionError}</Alert>}
 
-      <MapView markers={markers} center={markers[0]} respectLowData />
+      <MapView markers={markers} polyline={route.points} center={markers[0]} respectLowData />
+
+      {!isFinished && (b.status === 'assigned' || b.status === 'arrived') && (
+        <Alert tone="info">
+          {etaMin == null
+            ? 'Locating your driver…'
+            : etaMin <= 1
+              ? 'Your driver is arriving now.'
+              : `Your driver is ~${etaMin} min away.`}
+        </Alert>
+      )}
+      {!isFinished && b.status === 'in_progress' && (
+        <Alert tone={arriving ? 'good' : 'info'}>
+          {arriving
+            ? 'Arriving now — please get ready to alight.'
+            : etaMin == null
+              ? 'On the way.'
+              : `~${etaMin} min to ${b.dest_label ?? 'your destination'}.`}
+        </Alert>
+      )}
 
       {!isFinished && (
         <Card className="space-y-1">
@@ -195,14 +316,34 @@ export function PassengerTrip() {
       {driver && (
         <Card>
           <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">Your driver</p>
-          <p className="mt-1 text-lg font-bold text-slate-900">{driverProfile?.full_name || 'Driver'}</p>
-          <p className="text-sm text-slate-600">
-            {vehicle ? `${VEHICLE_LABELS[vehicle.type]} · Unit ${vehicle.unit_no ?? '—'} · Plate ${vehicle.plate_no ?? '—'}` : 'Vehicle details pending'}
-          </p>
-          <p className="mt-1 text-xs text-slate-500">
-            {driver.rating ? `Rating ${Number(driver.rating).toFixed(1)} (${driver.rating_count})` : 'No ratings yet'}
-            {driver.license_no ? ` · License ${driver.license_no}` : ''}
-          </p>
+          <div className="mt-2 flex items-start gap-3">
+            <div className="size-14 shrink-0 overflow-hidden rounded-full bg-slate-200">
+              {driverPhoto ? (
+                <img src={driverPhoto} alt="Driver" className="size-full object-cover" />
+              ) : (
+                <div className="flex size-full items-center justify-center text-slate-400">?</div>
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="text-lg font-bold text-slate-900">{driverProfile?.full_name || 'Driver'}</p>
+              <p className="text-sm text-slate-600">
+                {vehicle
+                  ? `${VEHICLE_LABELS[vehicle.type]} · Unit ${vehicle.unit_no ?? '—'} · Plate ${vehicle.plate_no ?? '—'}`
+                  : 'Vehicle details pending'}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                {driver.rating ? `Rating ${Number(driver.rating).toFixed(1)} (${driver.rating_count})` : 'No ratings yet'}
+                {driver.license_no ? ` · License ${driver.license_no}` : ''}
+              </p>
+            </div>
+          </div>
+          {vehiclePhoto && (
+            <img
+              src={vehiclePhoto}
+              alt="Vehicle"
+              className="mt-3 h-36 w-full rounded-xl object-cover"
+            />
+          )}
         </Card>
       )}
 

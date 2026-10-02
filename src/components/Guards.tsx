@@ -19,7 +19,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   const location = useLocation()
 
   if (loading) return <FullPageSpinner />
-  if (!session) return <Navigate to="/signin" state={{ from: location.pathname }} replace />
+  if (!session) return <Navigate to="/welcome" state={{ from: location.pathname }} replace />
   return <>{children}</>
 }
 

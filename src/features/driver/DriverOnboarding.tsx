@@ -14,8 +14,20 @@ export function DriverOnboarding() {
   const [unitNo, setUnitNo] = useState('')
   const [plateNo, setPlateNo] = useState('')
   const [franchiseNo, setFranchiseNo] = useState('')
+  const [selfieFile, setSelfieFile] = useState<File | null>(null)
+  const [vehicleFile, setVehicleFile] = useState<File | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  async function uploadPhoto(profileId: string, kind: string, file: File): Promise<string> {
+    const ext = file.name.split('.').pop() ?? 'jpg'
+    const path = `${profileId}/${kind}.${ext}`
+    const { error: uploadError } = await supabase.storage
+      .from('driver-photos')
+      .upload(path, file, { upsert: true, contentType: file.type })
+    if (uploadError) throw uploadError
+    return path
+  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
@@ -23,9 +35,25 @@ export function DriverOnboarding() {
     setBusy(true)
     setError(null)
 
+    let selfiePath: string | null = null
+    let vehiclePath: string | null = null
+    try {
+      if (selfieFile) selfiePath = await uploadPhoto(profile.id, 'profile', selfieFile)
+      if (vehicleFile) vehiclePath = await uploadPhoto(profile.id, 'vehicle', vehicleFile)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Photo upload failed.')
+      setBusy(false)
+      return
+    }
+
     const { data: driverRow, error: driverError } = await supabase
       .from('drivers')
-      .insert({ profile_id: profile.id, license_no: licenseNo.trim(), id_photo_url: idPhotoUrl.trim() || null })
+      .insert({
+        profile_id: profile.id,
+        license_no: licenseNo.trim(),
+        id_photo_url: idPhotoUrl.trim() || null,
+        photo_url: selfiePath,
+      })
       .select('id')
       .single()
 
@@ -41,6 +69,7 @@ export function DriverOnboarding() {
       unit_no: unitNo.trim() || null,
       plate_no: plateNo.trim() || null,
       franchise_no: franchiseNo.trim() || null,
+      photo_url: vehiclePath,
     })
 
     if (vehicleError) {
@@ -61,8 +90,8 @@ export function DriverOnboarding() {
       />
 
       <Alert tone="warn">
-        Verification is manual in this MVP. An admin reviews your license and franchise number against
-        the LGU list. Photo upload is not built yet, so paste a link to your ID photo.
+        Verification is manual. An admin reviews your license and franchise number against the LGU
+        list. Add clear photos below.
       </Alert>
 
       {error && <Alert tone="bad">{error}</Alert>}
@@ -101,6 +130,24 @@ export function DriverOnboarding() {
           </Field>
           <Field label="Franchise / registration number" htmlFor="franchise" hint="From your LGU franchise. [VERIFY format]">
             <Input id="franchise" value={franchiseNo} onChange={(e) => setFranchiseNo(e.target.value)} />
+          </Field>
+          <Field label="Driver selfie" htmlFor="selfie" hint="Shown to passengers during the ride.">
+            <input
+              id="selfie"
+              type="file"
+              accept="image/*"
+              onChange={(e) => setSelfieFile(e.target.files?.[0] ?? null)}
+              className="block w-full text-sm text-slate-600"
+            />
+          </Field>
+          <Field label="Vehicle photo" htmlFor="vehiclePhoto" hint="Shown to passengers so they can spot your unit.">
+            <input
+              id="vehiclePhoto"
+              type="file"
+              accept="image/*"
+              onChange={(e) => setVehicleFile(e.target.files?.[0] ?? null)}
+              className="block w-full text-sm text-slate-600"
+            />
           </Field>
         </Card>
 

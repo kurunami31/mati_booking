@@ -2,9 +2,11 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from './components/Layout'
 import { RequireAuth, RoleOutlet } from './components/Guards'
 import { SignIn } from './features/auth/SignIn'
+import { Welcome } from './features/auth/Welcome'
 import { PassengerHome } from './features/passenger/PassengerHome'
 import { PassengerTrip } from './features/passenger/PassengerTrip'
 import { PassengerHistory } from './features/passenger/PassengerHistory'
+import { Wallet } from './features/passenger/Wallet'
 import { DriverHome } from './features/driver/DriverHome'
 import { DriverActiveTrip } from './features/driver/DriverActiveTrip'
 import { DriverEarnings } from './features/driver/DriverEarnings'
@@ -42,6 +44,7 @@ export default function App() {
 
   return (
     <Routes>
+      <Route path="/welcome" element={<Welcome />} />
       <Route path="/signin" element={<SignIn />} />
 
       <Route
@@ -55,6 +58,7 @@ export default function App() {
           <Route index element={<PassengerHome />} />
           <Route path="trip" element={<PassengerTrip />} />
           <Route path="history" element={<PassengerHistory />} />
+          <Route path="wallet" element={<Wallet />} />
         </Route>
 
         <Route path="/driver" element={<RoleOutlet allow={['driver']} />}>

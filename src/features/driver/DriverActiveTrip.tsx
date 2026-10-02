@@ -197,7 +197,11 @@ export function DriverActiveTrip() {
         {b.status === 'completed' && (
           <Card className="space-y-3">
             <p className="font-semibold text-slate-800">
-              {payment?.status === 'collected' ? 'Cash collected' : 'Collect cash from passenger'}
+              {payment?.status === 'paid'
+                ? `Paid via ${payment.provider ?? 'e-wallet'}`
+                : payment?.status === 'collected'
+                  ? 'Cash collected'
+                  : 'Collect cash from passenger'}
             </p>
             {payment && (
               <p className="text-sm text-slate-600">
@@ -206,7 +210,7 @@ export function DriverActiveTrip() {
               </p>
             )}
             <div className="flex gap-2">
-              {payment?.status !== 'collected' && (
+              {payment?.status !== 'collected' && payment?.status !== 'paid' && (
                 <Button block loading={busy} onClick={() => void collected()}>
                   Mark cash collected
                 </Button>

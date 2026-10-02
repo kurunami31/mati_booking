@@ -28,7 +28,7 @@ export type BookingStatus =
   | 'no_show'
   | 'expired'
 export type PaymentMethod = 'cash' | 'ewallet'
-export type PaymentStatus = 'pending' | 'collected' | 'settled'
+export type PaymentStatus = 'pending' | 'collected' | 'settled' | 'awaiting_payment' | 'paid' | 'failed'
 export type SosStatus = 'open' | 'acknowledged' | 'closed_false_alarm' | 'closed_resolved'
 export type DiscountType = 'senior' | 'student' | 'pwd'
 
@@ -45,6 +45,7 @@ export type DriverRow = {
   profile_id: string
   license_no: string | null
   id_photo_url: string | null
+  photo_url: string | null
   status: DriverStatus
   rating: number | null
   rating_count: number
@@ -53,6 +54,8 @@ export type DriverRow = {
   last_lng: number | null
   last_seen: string | null
   created_at: string
+  completed_count: number
+  cancelled_count: number
 }
 
 export type VehicleRow = {
@@ -147,8 +150,37 @@ export type PaymentRow = {
   commission: number
   driver_net: number
   status: PaymentStatus
+  provider: string | null
+  provider_ref: string | null
+  checkout_url: string | null
+  paid_at: string | null
   collected_at: string | null
   settled_at: string | null
+  created_at: string
+}
+
+export type WalletRow = {
+  profile_id: string
+  balance: number
+  updated_at: string
+}
+
+export type WalletTransactionRow = {
+  id: string
+  profile_id: string
+  kind: 'topup' | 'ride_payment' | 'refund'
+  amount: number
+  booking_id: string | null
+  created_at: string
+}
+
+export type SavedPlaceRow = {
+  id: string
+  passenger_id: string
+  kind: 'home' | 'work' | 'other'
+  name: string
+  lat: number
+  lng: number
   created_at: string
 }
 
@@ -200,6 +232,9 @@ export type Database = {
       sos_alerts: Table<SosAlertRow>
       payments: Table<PaymentRow>
       ratings: Table<RatingRow>
+      wallets: Table<WalletRow>
+      wallet_transactions: Table<WalletTransactionRow>
+      saved_places: Table<SavedPlaceRow>
     }
     Views: { [_ in never]: never }
     Enums: {
@@ -260,6 +295,9 @@ export type Database = {
       >
       is_admin: Fn<Record<string, never>, boolean>
       current_driver_id: Fn<Record<string, never>, string | null>
+      wallet_topup: Fn<{ p_amount: number }, number>
+      wallet_pay_booking: Fn<{ p_booking_id: string }, PaymentRow>
+      mock_ewallet_pay: Fn<{ p_booking_id: string; p_provider: string }, PaymentRow>
     }
   }
 }

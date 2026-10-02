@@ -16,6 +16,7 @@ const NAV_BY_ROLE: Record<string, NavItem[]> = {
   passenger: [
     { to: '/', label: 'Book', end: true },
     { to: '/history', label: 'History' },
+    { to: '/wallet', label: 'Wallet' },
   ],
   driver: [
     { to: '/driver', label: 'Drive', end: true },

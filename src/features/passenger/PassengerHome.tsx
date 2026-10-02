@@ -38,6 +38,7 @@ export function PassengerHome() {
   const [discount, setDiscount] = useState<DiscountType | ''>('')
   const [passengerCount, setPassengerCount] = useState(1)
   const [hasLuggage, setHasLuggage] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'wallet' | 'ewallet'>('cash')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [queued, setQueued] = useState(false)
@@ -121,12 +122,36 @@ export function PassengerHome() {
       return
     }
 
-    const { error: rpcError } = await supabase.rpc('request_booking', payload)
-    setSubmitting(false)
+    const { data: booking, error: rpcError } = await supabase.rpc('request_booking', payload)
     if (rpcError) {
+      setSubmitting(false)
       setError(rpcError.message)
       return
     }
+
+    // Settle cashless rides immediately (simulated; a real gateway charges at the end).
+    if (booking && paymentMethod === 'wallet') {
+      const { error: payError } = await supabase.rpc('wallet_pay_booking', {
+        p_booking_id: booking.id,
+      })
+      if (payError) {
+        setSubmitting(false)
+        setError(payError.message)
+        return
+      }
+    } else if (booking && paymentMethod === 'ewallet') {
+      const { error: payError } = await supabase.rpc('mock_ewallet_pay', {
+        p_booking_id: booking.id,
+        p_provider: 'gcash',
+      })
+      if (payError) {
+        setSubmitting(false)
+        setError(payError.message)
+        return
+      }
+    }
+
+    setSubmitting(false)
     navigate('/trip')
   }
 
@@ -263,6 +288,24 @@ export function PassengerHome() {
           This is the fixed fare. It will not change on the street. Pay the driver in cash, or by
           e-wallet if offered.
         </p>
+      </Card>
+
+      <Card className="space-y-2">
+        <Field
+          label="Payment method"
+          htmlFor="pay"
+          hint="Wallet and GCash are simulated for now."
+        >
+          <Select
+            id="pay"
+            value={paymentMethod}
+            onChange={(e) => setPaymentMethod(e.target.value as 'cash' | 'wallet' | 'ewallet')}
+          >
+            <option value="cash">Cash on board</option>
+            <option value="wallet">SakayTa Wallet</option>
+            <option value="ewallet">GCash (simulated)</option>
+          </Select>
+        </Field>
       </Card>
 
       <Button block size="lg" onClick={() => void handleBook()} loading={submitting} disabled={fare == null}>

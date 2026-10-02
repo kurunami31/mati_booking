@@ -15,6 +15,42 @@ interface Candidate {
 const FILTERS = ['pending', 'verified', 'suspended'] as const
 type Filter = (typeof FILTERS)[number]
 
+function PhotoThumb({ path, label }: { path: string | null | undefined; label: string }) {
+  const [url, setUrl] = useState<string | null>(null)
+  useEffect(() => {
+    let active = true
+    void (async () => {
+      if (!path) {
+        setUrl(null)
+        return
+      }
+      if (path.startsWith('http')) {
+        setUrl(path)
+        return
+      }
+      const { data } = await supabase.storage.from('driver-photos').createSignedUrl(path, 3600)
+      if (active) setUrl(data?.signedUrl ?? null)
+    })()
+    return () => {
+      active = false
+    }
+  }, [path])
+  return (
+    <div>
+      <div className="h-24 w-full overflow-hidden rounded-xl bg-slate-200">
+        {url ? (
+          <img src={url} alt={label} className="size-full object-cover" />
+        ) : (
+          <div className="flex size-full items-center justify-center text-xs text-slate-400">
+            No photo
+          </div>
+        )}
+      </div>
+      <p className="mt-1 text-xs text-slate-500">{label}</p>
+    </div>
+  )
+}
+
 export function AdminVerification() {
   const [filter, setFilter] = useState<Filter>('pending')
   const [rows, setRows] = useState<Candidate[]>([])
@@ -161,6 +197,11 @@ export function AdminVerification() {
                   </>
                 )}
               </dl>
+
+              <div className="grid grid-cols-2 gap-2">
+                <PhotoThumb path={driver.photo_url} label="Driver selfie" />
+                <PhotoThumb path={vehicle?.photo_url} label="Vehicle" />
+              </div>
 
               <div className="flex gap-2">
                 <Button
