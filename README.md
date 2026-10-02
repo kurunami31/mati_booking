@@ -30,6 +30,8 @@ emergency dispatch is wired up.
    - `supabase/migrations/0001_init.sql` — tables, RLS, and RPCs
    - `supabase/migrations/0002_integrity.sql` — request/presence expiry, rating
      aggregation, reliability counters
+   - `supabase/migrations/0003_push.sql` — push token storage and dispatch
+     plumbing (inert until configured)
    - `supabase/seed.sql` — Mati zones, placeholder fare matrix, app settings
 
    Or apply everything from the command line (needs the pooler connection
@@ -90,6 +92,29 @@ emergency dispatch is wired up.
 - **Expiry and integrity** (`0002_integrity.sql`): unaccepted requests expire, stale
   driver presence is cleared, ratings aggregate into `drivers.rating`, and reliability
   counters are driven by `trip_events`. Scheduled with `pg_cron` where available.
+
+## Push notifications
+
+The Flutter driver app delivers job alerts without Firebase, over Supabase
+Realtime plus on-device local notifications while its foreground service runs.
+No setup is required.
+
+An optional Firebase Cloud Messaging path is also prepared and is **inert by
+default** — nothing is sent while `public.push_config.enabled` is false. To turn
+it on (FCM is free and does not require billing):
+
+1. Deploy the function and set secrets (see `supabase/functions/send-push`).
+2. Point the backend at it:
+
+   ```sql
+   update public.push_config
+      set url = 'https://<ref>.functions.supabase.co/send-push',
+          secret = '<PUSH_SECRET>',
+          enabled = true;
+   ```
+
+`push_config` has RLS enabled with no policies, so the endpoint secret is
+readable only by SECURITY DEFINER functions, not by clients.
 
 ## Dark corners in this MVP
 
